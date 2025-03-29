@@ -58,6 +58,32 @@ app.get('/api/collections/:name', async (req, res) => {
   }
 });
 
+app.post('/api/personal-db/collections/:name', async (req, res) => {
+  try {
+    const personalMongoUri = process.env.PERSONAL_MONGO_URI;
+
+    if (!personalMongoUri) {
+      return res.status(500).json({ error: 'PERSONAL_MONGO_URI is not set' });
+    }
+
+    const newClient = new MongoClient(personalMongoUri);
+    await newClient.connect();
+
+    const db = newClient.db();
+    const collection = db.collection(req.params.name);
+
+    const result = await collection.insertOne(req.body);
+
+    await newClient.close();
+
+    res.json({ message: 'Data inserted successfully', insertedId: result.insertedId });
+  } catch (error) {
+    console.error('Insert error:', error);
+    res.status(500).json({ error: 'Failed to insert data' });
+  }
+});
+
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
